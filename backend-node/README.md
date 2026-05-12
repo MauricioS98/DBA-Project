@@ -1,112 +1,195 @@
-# Backend Node.js - Sistema de Gestión de Grupos de Investigación
+# Backend Node.js — Sistema de Gestión de Grupos de Investigación
 
-Backend desarrollado en Node.js con Express para el sistema de gestión de grupos de investigación.
+API REST con **Express**, **PostgreSQL** (`pg`), autenticación **JWT** y validación con **express-validator**.
 
 ## Requisitos
 
-- Node.js (v16 o superior)
+- Node.js 16+ (recomendado 18 LTS)
 - PostgreSQL
 - npm o yarn
 
 ## Instalación
 
-1. Instalar dependencias:
 ```bash
+cd backend-node
 npm install
 ```
 
-2. Configurar variables de entorno:
+## Variables de entorno
+
+En este directorio existe **`env.example`**. Cópialo como **`.env`** y ajusta valores:
+
 ```bash
-cp .env.example .env
+# Windows (PowerShell)
+copy env.example .env
+
+# macOS / Linux
+cp env.example .env
 ```
 
-Editar el archivo `.env` con tus credenciales de base de datos:
-```
-PORT=8081
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=investigacion_ud
-DB_USER=postgres
-DB_PASSWORD=postgres
-JWT_SECRET=InvestigacionUDSecretKey2024ForJWTTokenGenerationAndValidation
-JWT_EXPIRATION=86400000
-CORS_ORIGIN=http://localhost:4200
+| Variable | Descripción |
+|----------|-------------|
+| `PORT` | Puerto HTTP del servidor (por defecto `8081`) |
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Conexión a PostgreSQL |
+| `JWT_SECRET` | Secreto para firmar tokens (usa un valor fuerte en producción) |
+| `JWT_EXPIRATION` | Duración del token en milisegundos |
+| `CORS_ORIGIN` | Origen permitido para CORS (p. ej. `http://localhost:4200`) |
+| `NODE_ENV` | `development` / `production` |
+
+## Base de datos
+
+El esquema está en **`DB.sql`** en la **raíz del repositorio** (no dentro de `backend-node`). Debes crear la base y ejecutar ese script antes de arrancar el servidor.
+
+Poblado opcional de datos de prueba:
+
+```bash
+npm run seed
 ```
 
-3. Asegúrate de que la base de datos PostgreSQL esté corriendo y que el esquema esté creado (ver `DB.sql` en la raíz del proyecto).
+Instrucciones detalladas: `SEED_INSTRUCTIONS.md`.
 
 ## Ejecución
 
-### Modo desarrollo (con nodemon):
-```bash
-npm run dev
-```
+| Comando | Descripción |
+|---------|-------------|
+| `npm run dev` | Desarrollo con **nodemon** |
+| `npm start` | Producción con `node server.js` |
+| `npm run seed` | Inserta datos de ejemplo |
 
-### Modo producción:
-```bash
-npm start
-```
-
-El servidor estará disponible en `http://localhost:8081`
-
-## Endpoints
-
-### Públicos
-- `GET /api/public/project-areas` - Obtener todas las áreas de proyecto
-- `GET /api/public/investigation-areas` - Obtener todas las áreas de investigación
-- `GET /api/public/product-types` - Obtener todos los tipos de producto
-
-### Autenticación
-- `POST /api/auth/register` - Registrar nuevo usuario
-- `POST /api/auth/login` - Iniciar sesión
-
-### Usuarios (requiere autenticación)
-- `GET /api/users/me` - Obtener usuario actual
-- `GET /api/users` - Obtener todos los usuarios (solo ADMINISTRADOR)
-- `GET /api/users/:id` - Obtener usuario por ID
-- `PUT /api/users/:id` - Actualizar usuario (solo ADMINISTRADOR)
-- `DELETE /api/users/:id` - Eliminar usuario (solo ADMINISTRADOR)
-
-### Equipos
-- `GET /api/teams/public` - Obtener todos los equipos (público)
-- `GET /api/teams/public/:id` - Obtener equipo por ID (público)
-- `GET /api/teams/public/area/:areaId` - Obtener equipos por área (público)
-- `POST /api/teams` - Crear equipo (COORDINADOR o ADMINISTRADOR)
-- `PUT /api/teams/:id` - Actualizar equipo (COORDINADOR o ADMINISTRADOR)
-- `DELETE /api/teams/:id` - Eliminar equipo (solo ADMINISTRADOR)
-
-### Proyectos
-- `GET /api/projects/public` - Obtener todos los proyectos (público)
-- `GET /api/projects/public/:id` - Obtener proyecto por ID (público)
-- `GET /api/projects/public/team/:teamId` - Obtener proyectos por equipo (público)
-- `POST /api/projects` - Crear proyecto (COORDINADOR o ADMINISTRADOR)
-- `PUT /api/projects/:id` - Actualizar proyecto (COORDINADOR o ADMINISTRADOR)
-- `DELETE /api/projects/:id` - Eliminar proyecto (COORDINADOR o ADMINISTRADOR)
-
-### Aplicaciones
-- `POST /api/applications` - Crear aplicación (ESTUDIANTE)
-- `GET /api/applications/my-applications` - Obtener mis aplicaciones (ESTUDIANTE)
-- `GET /api/applications/team/:teamId` - Obtener aplicaciones por equipo (COORDINADOR o ADMINISTRADOR)
-- `PUT /api/applications/:id/status` - Actualizar estado de aplicación (COORDINADOR o ADMINISTRADOR)
+URL por defecto: `http://localhost:8081`  
+Comprobación de salud: `GET /health`
 
 ## Autenticación
 
-El backend usa JWT (JSON Web Tokens) para autenticación. Después de hacer login o registro, recibirás un token que debes incluir en el header de las peticiones:
+Tras `POST /api/auth/login` o `POST /api/auth/register`, envía el token en cabeceras:
 
-```
+```http
 Authorization: Bearer <token>
 ```
 
-## Estructura del Proyecto
+El middleware valida el JWT y comprueba que el usuario siga existiendo en `app_user`.
+
+## Endpoints de la API
+
+Prefijo base: **`/api`**. Los que requieren token están marcados con “Auth”.
+
+### Públicos (`/api/public`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| GET | `/api/public/project-areas` | Áreas de proyecto (proyectos curriculares) |
+| GET | `/api/public/investigation-areas` | Áreas de investigación |
+| GET | `/api/public/product-types` | Tipos de producto |
+
+### Autenticación (`/api/auth`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/api/auth/register` | Registro |
+| POST | `/api/auth/login` | Inicio de sesión |
+
+### Usuarios (`/api/users`)
+
+| Método | Ruta | Roles | Descripción |
+|--------|------|-------|-------------|
+| GET | `/api/users/me` | Cualquiera autenticado | Usuario actual |
+| GET | `/api/users` | ADMINISTRADOR | Listado de usuarios |
+| POST | `/api/users` | ADMINISTRADOR | Crear usuario (docente) |
+| GET | `/api/users/teams-without-coordinator` | ADMINISTRADOR | Equipos sin coordinador |
+| GET | `/api/users/coordinators` | ADMINISTRADOR | Coordinadores |
+| GET | `/api/users/available-teachers` | ADMINISTRADOR | Docentes disponibles |
+| GET | `/api/users/:id` | Autenticado | Usuario por ID |
+| GET | `/api/users/:id/coordinator-info` | ADMINISTRADOR | Detalle coordinador + equipos |
+| PUT | `/api/users/:id` | ADMINISTRADOR | Actualizar usuario |
+| PUT | `/api/users/coordinator/:coordinatorId/teams` | ADMINISTRADOR | Asignar equipo a coordinador |
+| DELETE | `/api/users/:id` | ADMINISTRADOR | Eliminar usuario |
+
+> **Nota:** En Express, rutas estáticas como `/me` deben declararse **antes** de `/:id` (ya está ordenado en el código).
+
+### Equipos (`/api/teams`)
+
+| Método | Ruta | Roles | Descripción |
+|--------|------|-------|-------------|
+| GET | `/api/teams/public` | Público | Todos los equipos |
+| GET | `/api/teams/public/:id` | Público | Equipo por ID |
+| GET | `/api/teams/public/area/:areaId` | Público | Equipos por área de investigación |
+| GET | `/api/teams/my-teams` | COORDINADOR, ADMINISTRADOR | Equipos del coordinador |
+| GET | `/api/teams/my-teams-student` | ESTUDIANTE, DOCENTE | Equipos vinculados vía solicitudes aprobadas |
+| POST | `/api/teams` | COORDINADOR, ADMINISTRADOR | Crear equipo |
+| PUT | `/api/teams/:id` | COORDINADOR, ADMINISTRADOR | Actualizar equipo |
+| DELETE | `/api/teams/:id` | ADMINISTRADOR | Eliminar equipo |
+
+### Proyectos (`/api/projects`)
+
+| Método | Ruta | Roles | Descripción |
+|--------|------|-------|-------------|
+| GET | `/api/projects/public` | Público | Listado de proyectos |
+| GET | `/api/projects/public/:id` | Público | Proyecto por ID |
+| GET | `/api/projects/public/team/:teamId` | Público | Proyectos por equipo |
+| POST | `/api/projects` | COORDINADOR | Crear proyecto |
+| PUT | `/api/projects/:id` | COORDINADOR | Actualizar proyecto |
+| DELETE | `/api/projects/:id` | COORDINADOR | Eliminar proyecto |
+
+### Solicitudes / aplicaciones (`/api/applications`)
+
+| Método | Ruta | Roles | Descripción |
+|--------|------|-------|-------------|
+| POST | `/api/applications` | ESTUDIANTE, DOCENTE | Crear solicitud a un equipo |
+| GET | `/api/applications/my-applications` | ESTUDIANTE, DOCENTE | Mis solicitudes |
+| GET | `/api/applications/my-application/team/:teamId` | ESTUDIANTE, DOCENTE | Mi solicitud más reciente a un equipo |
+| GET | `/api/applications/team/:teamId` | COORDINADOR, ADMINISTRADOR | Solicitudes del equipo |
+| PUT | `/api/applications/:id/status` | COORDINADOR, ADMINISTRADOR | Cambiar estado y mensaje de respuesta |
+
+### Tipos de producto (`/api/product-types`)
+
+| Método | Ruta | Auth | Roles | Descripción |
+|--------|------|------|-------|-------------|
+| GET | `/api/product-types` | No | — | Listar tipos |
+| GET | `/api/product-types/:id` | No | — | Tipo por ID |
+| POST | `/api/product-types` | Sí | ADMINISTRADOR | Crear |
+| PUT | `/api/product-types/:id` | Sí | ADMINISTRADOR | Actualizar |
+| DELETE | `/api/product-types/:id` | Sí | ADMINISTRADOR | Eliminar |
+
+### Áreas de proyecto (`/api/project-areas`)
+
+| Método | Ruta | Auth | Roles | Descripción |
+|--------|------|------|-------|-------------|
+| GET | `/api/project-areas` | No | — | Listar proyectos curriculares |
+| GET | `/api/project-areas/:id` | No | — | Detalle |
+| POST | `/api/project-areas` | Sí | ADMINISTRADOR | Crear |
+| PUT | `/api/project-areas/:id` | Sí | ADMINISTRADOR | Actualizar |
+| DELETE | `/api/project-areas/:id` | Sí | ADMINISTRADOR | Eliminar |
+| GET | `/api/project-areas/:id/users` | Sí | ADMINISTRADOR | Usuarios por área |
+
+### Áreas de investigación (`/api/investigation-areas`)
+
+| Método | Ruta | Auth | Roles | Descripción |
+|--------|------|------|-------|-------------|
+| GET | `/api/investigation-areas` | No | — | Listar áreas |
+| GET | `/api/investigation-areas/project-area/:projectAreaId` | No | — | Áreas por proyecto curricular |
+| GET | `/api/investigation-areas/:id` | No | — | Detalle |
+| POST | `/api/investigation-areas` | Sí | ADMINISTRADOR | Crear |
+| PUT | `/api/investigation-areas/:id` | Sí | ADMINISTRADOR | Actualizar |
+| DELETE | `/api/investigation-areas/:id` | Sí | ADMINISTRADOR | Eliminar |
+
+## Estructura del proyecto
 
 ```
 backend-node/
-├── config/          # Configuración (base de datos, JWT)
-├── controllers/     # Controladores de las rutas
-├── middleware/      # Middleware (autenticación, manejo de errores)
-├── routes/          # Definición de rutas
-├── services/        # Lógica de negocio
-├── server.js        # Punto de entrada
-└── package.json     # Dependencias
+├── config/           # database.js, jwt.js
+├── controllers/
+├── middleware/       # auth, errorHandler
+├── routes/
+├── services/
+├── server.js
+├── seed.js
+├── env.example
+└── package.json
 ```
 
+## Documentación adicional
+
+- `SEED_INSTRUCTIONS.md` — Cómo ejecutar el seed y credenciales de prueba  
+- `INSTRUCCIONES.md` — Notas en español del backend  
+
+Para instalación conjunta con el cliente Angular, ver el **`README.md`** en la raíz del repositorio.
