@@ -1,0 +1,236 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+
+const API_URL = 'http://localhost:8081/api';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ApiService {
+  constructor(private http: HttpClient) {}
+
+  // Teams
+  getTeams(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/teams/public`);
+  }
+
+  getMyTeams(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/teams/my-teams`);
+  }
+
+  getMyTeamsAsStudent(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/teams/my-teams-student`);
+  }
+
+  getTeamById(id: number): Observable<any> {
+    return this.http.get<any>(`${API_URL}/teams/public/${id}`);
+  }
+
+  getTeamsByArea(areaId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/teams/public/area/${areaId}`);
+  }
+
+  createTeam(team: any): Observable<any> {
+    return this.http.post<any>(`${API_URL}/teams`, team);
+  }
+
+  updateTeam(id: number, team: any): Observable<any> {
+    return this.http.put<any>(`${API_URL}/teams/${id}`, team);
+  }
+
+  deleteTeam(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_URL}/teams/${id}`);
+  }
+
+  // Projects
+  getProjects(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/projects/public`);
+  }
+
+  getProjectById(id: number): Observable<any> {
+    return this.http.get<any>(`${API_URL}/projects/public/${id}`);
+  }
+
+  getProjectsByTeam(teamId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/projects/public/team/${teamId}`);
+  }
+
+  createProject(project: any): Observable<any> {
+    return this.http.post<any>(`${API_URL}/projects`, project);
+  }
+
+  updateProject(id: number, project: any): Observable<any> {
+    return this.http.put<any>(`${API_URL}/projects/${id}`, project);
+  }
+
+  deleteProject(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_URL}/projects/${id}`);
+  }
+
+  // Applications
+  createApplication(application: any): Observable<any> {
+    return this.http.post<any>(`${API_URL}/applications`, application);
+  }
+
+  getMyApplications(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/applications/my-applications`);
+  }
+
+  getMyApplicationByTeam(teamId: number): Observable<any> {
+    return this.http.get<any>(`${API_URL}/applications/my-application/team/${teamId}`).pipe(
+      catchError(error => {
+        // Si es 404 o el error indica que no hay aplicación, devolver null
+        if (error.status === 404 || error.status === 500) {
+          return of(null);
+        }
+        throw error;
+      })
+    );
+  }
+
+  getApplicationsByTeam(teamId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/applications/team/${teamId}`);
+  }
+
+  updateApplicationStatus(id: number, state: string, answerMessage: string): Observable<any> {
+    return this.http.put<any>(`${API_URL}/applications/${id}/status`, { state, answerMessage });
+  }
+
+  // Public Data
+  getProjectAreas(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/public/project-areas`);
+  }
+
+  getInvestigationAreas(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/public/investigation-areas`);
+  }
+
+  getProductTypes(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/public/product-types`);
+  }
+
+  // Users (Admin)
+  getUsers(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/users`);
+  }
+
+  getUserById(id: number): Observable<any> {
+    return this.http.get<any>(`${API_URL}/users/${id}`);
+  }
+
+  getUserWithCoordinatorInfo(id: number): Observable<any> {
+    return this.http.get<any>(`${API_URL}/users/${id}/coordinator-info`);
+  }
+
+  createUser(user: any): Observable<any> {
+    return this.http.post<any>(`${API_URL}/users`, user);
+  }
+
+  updateUser(id: number, user: any): Observable<any> {
+    return this.http.put<any>(`${API_URL}/users/${id}`, user);
+  }
+
+  updateCoordinatorTeams(coordinatorId: number, teamId: number): Observable<any> {
+    return this.http.put<any>(`${API_URL}/users/coordinator/${coordinatorId}/teams`, { teamId });
+  }
+
+  getTeamsWithoutCoordinator(coordinatorId?: number): Observable<any[]> {
+    const params = coordinatorId ? { params: { coordinatorId: coordinatorId.toString() } } : {};
+    return this.http.get<any[]>(`${API_URL}/users/teams-without-coordinator`, params);
+  }
+
+  getAllCoordinators(excludeTeamId?: number): Observable<any[]> {
+    const params = excludeTeamId ? { params: { excludeTeamId: excludeTeamId.toString() } } : {};
+    return this.http.get<any[]>(`${API_URL}/users/coordinators`, params);
+  }
+
+  getAvailableTeachers(excludeTeamId?: number, projectAreaId?: number): Observable<any[]> {
+    const queryParams: any = {};
+    if (excludeTeamId) {
+      queryParams.excludeTeamId = excludeTeamId.toString();
+    }
+    if (projectAreaId !== undefined && projectAreaId !== null) {
+      queryParams.projectAreaId = projectAreaId.toString();
+    }
+    const params = Object.keys(queryParams).length > 0 ? { params: queryParams } : {};
+    return this.http.get<any[]>(`${API_URL}/users/available-teachers`, params);
+  }
+
+  deleteUser(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_URL}/users/${id}`);
+  }
+
+  // Product Types (Admin)
+  getProductTypesAdmin(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/product-types`);
+  }
+
+  getProductTypeById(id: number): Observable<any> {
+    return this.http.get<any>(`${API_URL}/product-types/${id}`);
+  }
+
+  createProductType(productType: any): Observable<any> {
+    return this.http.post<any>(`${API_URL}/product-types`, productType);
+  }
+
+  updateProductType(id: number, productType: any): Observable<any> {
+    return this.http.put<any>(`${API_URL}/product-types/${id}`, productType);
+  }
+
+  deleteProductType(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_URL}/product-types/${id}`);
+  }
+
+  // Project Areas (Admin)
+  getProjectAreasAdmin(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/project-areas`);
+  }
+
+  getProjectAreaById(id: number): Observable<any> {
+    return this.http.get<any>(`${API_URL}/project-areas/${id}`);
+  }
+
+  createProjectArea(projectArea: any): Observable<any> {
+    return this.http.post<any>(`${API_URL}/project-areas`, projectArea);
+  }
+
+  updateProjectArea(id: number, projectArea: any): Observable<any> {
+    return this.http.put<any>(`${API_URL}/project-areas/${id}`, projectArea);
+  }
+
+  deleteProjectArea(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_URL}/project-areas/${id}`);
+  }
+
+  getUsersByProjectArea(id: number): Observable<any> {
+    return this.http.get<any>(`${API_URL}/project-areas/${id}/users`);
+  }
+
+  // Investigation Areas (Admin)
+  getInvestigationAreasAdmin(): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/investigation-areas`);
+  }
+
+  getInvestigationAreasByProjectArea(projectAreaId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${API_URL}/investigation-areas/project-area/${projectAreaId}`);
+  }
+
+  getInvestigationAreaById(id: number): Observable<any> {
+    return this.http.get<any>(`${API_URL}/investigation-areas/${id}`);
+  }
+
+  createInvestigationArea(investigationArea: any): Observable<any> {
+    return this.http.post<any>(`${API_URL}/investigation-areas`, investigationArea);
+  }
+
+  updateInvestigationArea(id: number, investigationArea: any): Observable<any> {
+    return this.http.put<any>(`${API_URL}/investigation-areas/${id}`, investigationArea);
+  }
+
+  deleteInvestigationArea(id: number): Observable<void> {
+    return this.http.delete<void>(`${API_URL}/investigation-areas/${id}`);
+  }
+}
+
