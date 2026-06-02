@@ -62,17 +62,17 @@ CREATE FUNCTION public.fn_audit_investigation_team() RETURNS trigger
 BEGIN
     IF (TG_OP = 'INSERT') THEN
         INSERT INTO investigation_team_audit (investigation_team_id, new_name, new_classification, new_cordinator_id, operacion)
-        VALUES (NEW.investigation_team_id, NEW.name, NEW.classification, NEW.cordinator_id, 'I');
+        VALUES (NEW.investigation_team_id, NEW.name, NULL, NEW.cordinator_id, 'I');
         RETURN NEW;
         
     ELSIF (TG_OP = 'UPDATE') THEN
         INSERT INTO investigation_team_audit (investigation_team_id, old_name, new_name, old_classification, new_classification, old_cordinator_id, new_cordinator_id, operacion)
-        VALUES (OLD.investigation_team_id, OLD.name, NEW.name, OLD.classification, NEW.classification, OLD.cordinator_id, NEW.cordinator_id, 'U');
+        VALUES (OLD.investigation_team_id, OLD.name, NEW.name, NULL, NULL, OLD.cordinator_id, NEW.cordinator_id, 'U');
         RETURN NEW;
         
     ELSIF (TG_OP = 'DELETE') THEN
         INSERT INTO investigation_team_audit (investigation_team_id, old_name, old_classification, old_cordinator_id, operacion)
-        VALUES (OLD.investigation_team_id, OLD.name, OLD.classification, OLD.cordinator_id, 'D');
+        VALUES (OLD.investigation_team_id, OLD.name, NULL, OLD.cordinator_id, 'D');
         RETURN OLD;
     END IF;
     RETURN NULL;
@@ -409,6 +409,33 @@ ALTER TABLE public.investigation_team_audit ALTER COLUMN audit_id ADD GENERATED 
 
 
 --
+-- Name: global_audit; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.global_audit (
+    audit_id integer NOT NULL,
+    table_name character varying(255) NOT NULL,
+    operation character(1) NOT NULL,
+    old_data jsonb,
+    new_data jsonb,
+    fecha_cambio timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    usuario_bd character varying(100) DEFAULT CURRENT_USER
+);
+
+
+ALTER TABLE public.global_audit OWNER TO postgres;
+
+ALTER TABLE public.global_audit ALTER COLUMN audit_id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.global_audit_audit_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
 -- TOC entry 223 (class 1259 OID 25043)
 -- Name: investigation_team_investigation_team_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
@@ -635,6 +662,10 @@ ALTER TABLE ONLY public.investigation_project
 
 ALTER TABLE ONLY public.investigation_team_audit
     ADD CONSTRAINT investigation_team_audit_pkey PRIMARY KEY (audit_id);
+
+
+ALTER TABLE ONLY public.global_audit
+    ADD CONSTRAINT global_audit_pkey PRIMARY KEY (audit_id);
 
 
 --
