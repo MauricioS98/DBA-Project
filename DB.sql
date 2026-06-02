@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict i9NyCVoXJKUM7ErefNb6KD5htYqUo0YE9fu8vF4SHbzSTVBnjGOQRSxo1dF6d0e
+\restrict MrZ9OHOLXvvnMNgU6F215v1DbdTOLiCGP250iwLPfBEZoqhElRP8UkZ3jjlPjku
 
 -- Dumped from database version 16.14 (Ubuntu 16.14-0ubuntu0.24.04.1)
 -- Dumped by pg_dump version 16.14 (Ubuntu 16.14-0ubuntu0.24.04.1)
 
--- Started on 2026-05-30 22:38:31 -05
+-- Started on 2026-06-01 20:20:40 -05
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -113,6 +113,66 @@ $$;
 
 
 ALTER FUNCTION public.fn_global_audit_trigger() OWNER TO postgres;
+
+--
+-- TOC entry 253 (class 1255 OID 33350)
+-- Name: sp_aprobar_solicitud_vinculacion(integer, character varying); Type: PROCEDURE; Schema: public; Owner: postgres
+--
+
+CREATE PROCEDURE public.sp_aprobar_solicitud_vinculacion(IN p_application_id integer, IN p_answer_message character varying)
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    v_user_id INT;
+    v_team_id INT;
+    v_current_state VARCHAR(32);
+BEGIN
+    -- 1. Obtener la información de la solicitud y validar su existencia
+    SELECT user_id, investigation_team_id, state 
+    INTO v_user_id, v_team_id, v_current_state
+    FROM Application
+    WHERE application_id = p_application_id;
+
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Error: La solicitud con ID % no existe.', p_application_id;
+    END IF;
+
+    -- 2. Validar que la solicitud no haya sido procesada previamente
+    IF v_current_state <> 'Pendiente' THEN
+        RAISE EXCEPTION 'Error: La solicitud ya se encuentra en estado % y no puede ser modificada.', v_current_state;
+    END IF;
+    
+    -- 3. Actualizar el estado de la postulación en la tabla Application
+    UPDATE Application
+    SET state = 'Aprobado',
+        answer_date = CURRENT_DATE,
+        answer_message = p_answer_message
+    WHERE application_id = p_application_id;
+
+    -- 4. Vincular al estudiante al equipo de investigación (Actualizar tabla Student)
+    -- Nota: Se busca en la tabla Student usando el user_id heredado de app_user
+    UPDATE Student
+    SET team_id = v_team_id
+    WHERE user_id = v_user_id;
+
+    -- Si el usuario que postuló no era un Estudiante (o no se encontró en la tabla)
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Error de integridad: El usuario asociado a la solicitud no está registrado como Estudiante.';
+    END IF;
+
+    -- Si todo fue exitoso, PostgreSQL realiza el COMMIT implícito al finalizar el bloque.
+    RAISE NOTICE 'Transacción exitosa: Solicitud % aprobada y estudiante vinculado al equipo %.', p_application_id, v_team_id;
+
+EXCEPTION
+    -- En caso de cualquier error, se captura, se fuerza un ROLLBACK automático y se informa
+    WHEN OTHERS THEN
+        RAISE NOTICE 'ROLLBACK EJECUTADO: Se detectó un error en la operación. Detalles: %', SQLERRM;
+        RAISE;
+END;
+$$;
+
+
+ALTER PROCEDURE public.sp_aprobar_solicitud_vinculacion(IN p_application_id integer, IN p_answer_message character varying) OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -497,7 +557,7 @@ CREATE TABLE public.teacher (
 ALTER TABLE public.teacher OWNER TO postgres;
 
 --
--- TOC entry 3433 (class 2606 OID 25167)
+-- TOC entry 3434 (class 2606 OID 25167)
 -- Name: app_user_audit app_user_audit_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -506,7 +566,7 @@ ALTER TABLE ONLY public.app_user_audit
 
 
 --
--- TOC entry 3397 (class 2606 OID 24972)
+-- TOC entry 3398 (class 2606 OID 24972)
 -- Name: app_user app_user_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -515,7 +575,7 @@ ALTER TABLE ONLY public.app_user
 
 
 --
--- TOC entry 3399 (class 2606 OID 24970)
+-- TOC entry 3400 (class 2606 OID 24970)
 -- Name: app_user app_user_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -524,7 +584,7 @@ ALTER TABLE ONLY public.app_user
 
 
 --
--- TOC entry 3429 (class 2606 OID 25132)
+-- TOC entry 3430 (class 2606 OID 25132)
 -- Name: application application_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -533,7 +593,7 @@ ALTER TABLE ONLY public.application
 
 
 --
--- TOC entry 3413 (class 2606 OID 25024)
+-- TOC entry 3414 (class 2606 OID 25024)
 -- Name: cordinator cordinator_coordinator_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -542,7 +602,7 @@ ALTER TABLE ONLY public.cordinator
 
 
 --
--- TOC entry 3415 (class 2606 OID 25022)
+-- TOC entry 3416 (class 2606 OID 25022)
 -- Name: cordinator cordinator_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -551,7 +611,7 @@ ALTER TABLE ONLY public.cordinator
 
 
 --
--- TOC entry 3417 (class 2606 OID 25037)
+-- TOC entry 3418 (class 2606 OID 25037)
 -- Name: investigation_area investigation_area_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -560,7 +620,7 @@ ALTER TABLE ONLY public.investigation_area
 
 
 --
--- TOC entry 3421 (class 2606 OID 25078)
+-- TOC entry 3422 (class 2606 OID 25078)
 -- Name: investigation_project investigation_project_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -569,7 +629,7 @@ ALTER TABLE ONLY public.investigation_project
 
 
 --
--- TOC entry 3435 (class 2606 OID 25179)
+-- TOC entry 3436 (class 2606 OID 25179)
 -- Name: investigation_team_audit investigation_team_audit_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -578,7 +638,7 @@ ALTER TABLE ONLY public.investigation_team_audit
 
 
 --
--- TOC entry 3419 (class 2606 OID 25050)
+-- TOC entry 3420 (class 2606 OID 25050)
 -- Name: investigation_team investigation_team_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -587,7 +647,7 @@ ALTER TABLE ONLY public.investigation_team
 
 
 --
--- TOC entry 3425 (class 2606 OID 25099)
+-- TOC entry 3426 (class 2606 OID 25099)
 -- Name: product product_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -596,7 +656,7 @@ ALTER TABLE ONLY public.product
 
 
 --
--- TOC entry 3427 (class 2606 OID 25114)
+-- TOC entry 3428 (class 2606 OID 25114)
 -- Name: product_student product_student_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -605,7 +665,7 @@ ALTER TABLE ONLY public.product_student
 
 
 --
--- TOC entry 3431 (class 2606 OID 25147)
+-- TOC entry 3432 (class 2606 OID 25147)
 -- Name: product_teacher product_teacher_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -614,7 +674,7 @@ ALTER TABLE ONLY public.product_teacher
 
 
 --
--- TOC entry 3423 (class 2606 OID 25091)
+-- TOC entry 3424 (class 2606 OID 25091)
 -- Name: product_type product_type_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -623,7 +683,7 @@ ALTER TABLE ONLY public.product_type
 
 
 --
--- TOC entry 3401 (class 2606 OID 24979)
+-- TOC entry 3402 (class 2606 OID 24979)
 -- Name: project_area project_area_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -632,7 +692,7 @@ ALTER TABLE ONLY public.project_area
 
 
 --
--- TOC entry 3407 (class 2606 OID 25003)
+-- TOC entry 3408 (class 2606 OID 25003)
 -- Name: student student_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -641,7 +701,7 @@ ALTER TABLE ONLY public.student
 
 
 --
--- TOC entry 3409 (class 2606 OID 25007)
+-- TOC entry 3410 (class 2606 OID 25007)
 -- Name: student student_student_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -650,7 +710,7 @@ ALTER TABLE ONLY public.student
 
 
 --
--- TOC entry 3411 (class 2606 OID 25005)
+-- TOC entry 3412 (class 2606 OID 25005)
 -- Name: student student_user_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -659,7 +719,7 @@ ALTER TABLE ONLY public.student
 
 
 --
--- TOC entry 3403 (class 2606 OID 24984)
+-- TOC entry 3404 (class 2606 OID 24984)
 -- Name: teacher teacher_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -668,7 +728,7 @@ ALTER TABLE ONLY public.teacher
 
 
 --
--- TOC entry 3405 (class 2606 OID 24986)
+-- TOC entry 3406 (class 2606 OID 24986)
 -- Name: teacher teacher_teacher_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -677,7 +737,7 @@ ALTER TABLE ONLY public.teacher
 
 
 --
--- TOC entry 3455 (class 2620 OID 25169)
+-- TOC entry 3456 (class 2620 OID 25169)
 -- Name: app_user trg_audit_app_user; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -685,7 +745,7 @@ CREATE TRIGGER trg_audit_app_user AFTER INSERT OR DELETE OR UPDATE ON public.app
 
 
 --
--- TOC entry 3461 (class 2620 OID 25190)
+-- TOC entry 3462 (class 2620 OID 25190)
 -- Name: application trg_audit_application; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -693,7 +753,7 @@ CREATE TRIGGER trg_audit_application AFTER INSERT OR DELETE OR UPDATE ON public.
 
 
 --
--- TOC entry 3459 (class 2620 OID 25188)
+-- TOC entry 3460 (class 2620 OID 25188)
 -- Name: investigation_project trg_audit_investigation_project; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -701,7 +761,7 @@ CREATE TRIGGER trg_audit_investigation_project AFTER INSERT OR DELETE OR UPDATE 
 
 
 --
--- TOC entry 3458 (class 2620 OID 25181)
+-- TOC entry 3459 (class 2620 OID 25181)
 -- Name: investigation_team trg_audit_investigation_team; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -709,7 +769,7 @@ CREATE TRIGGER trg_audit_investigation_team AFTER INSERT OR DELETE OR UPDATE ON 
 
 
 --
--- TOC entry 3460 (class 2620 OID 25189)
+-- TOC entry 3461 (class 2620 OID 25189)
 -- Name: product trg_audit_product; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -717,7 +777,7 @@ CREATE TRIGGER trg_audit_product AFTER INSERT OR DELETE OR UPDATE ON public.prod
 
 
 --
--- TOC entry 3457 (class 2620 OID 25186)
+-- TOC entry 3458 (class 2620 OID 25186)
 -- Name: student trg_audit_student; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -725,7 +785,7 @@ CREATE TRIGGER trg_audit_student AFTER INSERT OR DELETE OR UPDATE ON public.stud
 
 
 --
--- TOC entry 3456 (class 2620 OID 25187)
+-- TOC entry 3457 (class 2620 OID 25187)
 -- Name: teacher trg_audit_teacher; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -733,7 +793,7 @@ CREATE TRIGGER trg_audit_teacher AFTER INSERT OR DELETE OR UPDATE ON public.teac
 
 
 --
--- TOC entry 3451 (class 2606 OID 25138)
+-- TOC entry 3452 (class 2606 OID 25138)
 -- Name: application application_investigation_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -742,7 +802,7 @@ ALTER TABLE ONLY public.application
 
 
 --
--- TOC entry 3452 (class 2606 OID 25133)
+-- TOC entry 3453 (class 2606 OID 25133)
 -- Name: application application_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -751,7 +811,7 @@ ALTER TABLE ONLY public.application
 
 
 --
--- TOC entry 3442 (class 2606 OID 25025)
+-- TOC entry 3443 (class 2606 OID 25025)
 -- Name: cordinator cordinator_teacher_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -760,7 +820,7 @@ ALTER TABLE ONLY public.cordinator
 
 
 --
--- TOC entry 3443 (class 2606 OID 25038)
+-- TOC entry 3444 (class 2606 OID 25038)
 -- Name: investigation_area investigation_area_project_area_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -769,7 +829,7 @@ ALTER TABLE ONLY public.investigation_area
 
 
 --
--- TOC entry 3446 (class 2606 OID 25079)
+-- TOC entry 3447 (class 2606 OID 25079)
 -- Name: investigation_project investigation_project_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -778,7 +838,7 @@ ALTER TABLE ONLY public.investigation_project
 
 
 --
--- TOC entry 3444 (class 2606 OID 25051)
+-- TOC entry 3445 (class 2606 OID 25051)
 -- Name: investigation_team investigation_team_area_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -787,7 +847,7 @@ ALTER TABLE ONLY public.investigation_team
 
 
 --
--- TOC entry 3445 (class 2606 OID 25056)
+-- TOC entry 3446 (class 2606 OID 25056)
 -- Name: investigation_team investigation_team_cordinator_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -796,7 +856,7 @@ ALTER TABLE ONLY public.investigation_team
 
 
 --
--- TOC entry 3447 (class 2606 OID 25100)
+-- TOC entry 3448 (class 2606 OID 25100)
 -- Name: product product_investigation_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -805,7 +865,7 @@ ALTER TABLE ONLY public.product
 
 
 --
--- TOC entry 3449 (class 2606 OID 25115)
+-- TOC entry 3450 (class 2606 OID 25115)
 -- Name: product_student product_student_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -814,7 +874,7 @@ ALTER TABLE ONLY public.product_student
 
 
 --
--- TOC entry 3450 (class 2606 OID 25120)
+-- TOC entry 3451 (class 2606 OID 25120)
 -- Name: product_student product_student_student_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -823,7 +883,7 @@ ALTER TABLE ONLY public.product_student
 
 
 --
--- TOC entry 3453 (class 2606 OID 25148)
+-- TOC entry 3454 (class 2606 OID 25148)
 -- Name: product_teacher product_teacher_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -832,7 +892,7 @@ ALTER TABLE ONLY public.product_teacher
 
 
 --
--- TOC entry 3454 (class 2606 OID 25153)
+-- TOC entry 3455 (class 2606 OID 25153)
 -- Name: product_teacher product_teacher_teacher_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -841,7 +901,7 @@ ALTER TABLE ONLY public.product_teacher
 
 
 --
--- TOC entry 3448 (class 2606 OID 25105)
+-- TOC entry 3449 (class 2606 OID 25105)
 -- Name: product product_type_product_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -850,7 +910,7 @@ ALTER TABLE ONLY public.product
 
 
 --
--- TOC entry 3439 (class 2606 OID 25013)
+-- TOC entry 3440 (class 2606 OID 25013)
 -- Name: student student_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -859,7 +919,7 @@ ALTER TABLE ONLY public.student
 
 
 --
--- TOC entry 3440 (class 2606 OID 25066)
+-- TOC entry 3441 (class 2606 OID 25066)
 -- Name: student student_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -868,7 +928,7 @@ ALTER TABLE ONLY public.student
 
 
 --
--- TOC entry 3441 (class 2606 OID 25008)
+-- TOC entry 3442 (class 2606 OID 25008)
 -- Name: student student_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -877,7 +937,7 @@ ALTER TABLE ONLY public.student
 
 
 --
--- TOC entry 3436 (class 2606 OID 24992)
+-- TOC entry 3437 (class 2606 OID 24992)
 -- Name: teacher teacher_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -886,7 +946,7 @@ ALTER TABLE ONLY public.teacher
 
 
 --
--- TOC entry 3437 (class 2606 OID 25061)
+-- TOC entry 3438 (class 2606 OID 25061)
 -- Name: teacher teacher_team_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -895,7 +955,7 @@ ALTER TABLE ONLY public.teacher
 
 
 --
--- TOC entry 3438 (class 2606 OID 24987)
+-- TOC entry 3439 (class 2606 OID 24987)
 -- Name: teacher teacher_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -903,11 +963,11 @@ ALTER TABLE ONLY public.teacher
     ADD CONSTRAINT teacher_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.app_user(user_id);
 
 
--- Completed on 2026-05-30 22:38:31 -05
+-- Completed on 2026-06-01 20:20:40 -05
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict i9NyCVoXJKUM7ErefNb6KD5htYqUo0YE9fu8vF4SHbzSTVBnjGOQRSxo1dF6d0e
+\unrestrict MrZ9OHOLXvvnMNgU6F215v1DbdTOLiCGP250iwLPfBEZoqhElRP8UkZ3jjlPjku
 
