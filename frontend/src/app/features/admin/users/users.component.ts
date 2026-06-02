@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
+import { RouterModule } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,7 +21,7 @@ import { ConfirmDeleteDialogComponent } from '../../../shared/components/confirm
   imports: [
     CommonModule,
     FormsModule,
-    MatCardModule,
+    RouterModule,
     MatTableModule,
     MatButtonModule,
     MatIconModule,
@@ -33,26 +33,27 @@ import { ConfirmDeleteDialogComponent } from '../../../shared/components/confirm
     MatSelectModule
   ],
   template: `
-    <div class="users-container">
-      <div class="header">
-        <h1>Gestión de Usuarios</h1>
-        <button mat-raised-button color="primary" (click)="createUser()">
-          <mat-icon>add</mat-icon>
-          Crear Usuario
-        </button>
-      </div>
-      
-      <mat-card class="filters-card">
-        <div class="filters">
-          <mat-form-field appearance="outline" class="filter-field">
-            <mat-label>Buscar por nombre o email</mat-label>
-            <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()" placeholder="Buscar...">
+    <div class="app-page">
+      <div class="app-page__inner">
+        <a routerLink="/admin" class="app-back-link">
+          <mat-icon>arrow_back</mat-icon>
+          Volver al panel
+        </a>
+        <div class="app-page-header">
+          <h1 class="app-page__title">Gestión de usuarios</h1>
+          <button mat-stroked-button class="auth-btn-pill auth-btn-pill--inline" (click)="createUser()">
+            <span class="auth-btn-pill__label"><mat-icon>add</mat-icon> Crear usuario</span>
+          </button>
+        </div>
+
+        <div class="app-toolbar-card">
+          <mat-form-field appearance="outline" class="auth-field" subscriptSizing="dynamic">
+            <input matInput [(ngModel)]="searchTerm" (ngModelChange)="applyFilters()" placeholder="Buscar por nombre o email">
             <mat-icon matPrefix>search</mat-icon>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="filter-field">
-            <mat-label>Filtrar por rol</mat-label>
-            <mat-select [(ngModel)]="selectedRole" (selectionChange)="applyFilters()">
+          <mat-form-field appearance="outline" class="auth-field" subscriptSizing="dynamic">
+            <mat-select [(ngModel)]="selectedRole" (selectionChange)="applyFilters()" placeholder="Rol" panelClass="auth-select-panel">
               <mat-option [value]="null">Todos los roles</mat-option>
               <mat-option value="ESTUDIANTE">Estudiante</mat-option>
               <mat-option value="DOCENTE">Docente</mat-option>
@@ -61,9 +62,8 @@ import { ConfirmDeleteDialogComponent } from '../../../shared/components/confirm
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="filter-field">
-            <mat-label>Filtrar por proyecto curricular</mat-label>
-            <mat-select [(ngModel)]="selectedProjectArea" (selectionChange)="applyFilters()">
+          <mat-form-field appearance="outline" class="auth-field" subscriptSizing="dynamic">
+            <mat-select [(ngModel)]="selectedProjectArea" (selectionChange)="applyFilters()" placeholder="Proyecto curricular" panelClass="auth-select-panel">
               <mat-option [value]="null">Todos los proyectos</mat-option>
               @for (area of projectAreas; track area.proyectAreaId) {
                 <mat-option [value]="area.proyectAreaId">{{area.name}}</mat-option>
@@ -72,16 +72,15 @@ import { ConfirmDeleteDialogComponent } from '../../../shared/components/confirm
           </mat-form-field>
 
           @if (searchTerm || selectedRole || selectedProjectArea) {
-            <button mat-button (click)="clearFilters()" class="clear-filters">
+            <button mat-button (click)="clearFilters()" class="app-btn-text">
               <mat-icon>clear</mat-icon>
               Limpiar filtros
             </button>
           }
         </div>
-      </mat-card>
-      
-      <mat-card>
-        <table mat-table [dataSource]="filteredUsers" class="users-table">
+
+        <div class="app-table-card">
+        <table mat-table [dataSource]="filteredUsers">
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef>Nombre</th>
             <td mat-cell *matCellDef="let user">{{user.name}}</td>
@@ -125,56 +124,15 @@ import { ConfirmDeleteDialogComponent } from '../../../shared/components/confirm
         </table>
         
         @if (filteredUsers.length === 0) {
-          <div class="no-data">No se encontraron usuarios</div>
+          <div class="app-empty-state app-empty-state--compact" style="box-shadow: none; border: none;">
+            <p>No se encontraron usuarios</p>
+          </div>
         }
-      </mat-card>
+        </div>
+      </div>
     </div>
   `,
-  styles: [`
-    .users-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 32px 24px;
-    }
-    
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-    
-    .filters-card {
-      margin-bottom: 24px;
-    }
-    
-    .filters {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-    
-    .filter-field {
-      flex: 1;
-      min-width: 200px;
-    }
-    
-    .clear-filters {
-      margin-left: auto;
-    }
-    
-    .users-table {
-      width: 100%;
-    }
-    
-    .no-data {
-      text-align: center;
-      padding: 24px;
-      color: #999;
-      font-style: italic;
-    }
-  `]
+  styles: [`:host { display: block; } .mat-column-actions { width: 120px; text-align: center; }`]
 })
 export class UsersComponent implements OnInit {
   users: any[] = [];

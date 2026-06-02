@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
+import { RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
@@ -21,7 +21,7 @@ import { ProjectDialogComponent } from '../../../shared/components/project-dialo
   imports: [
     CommonModule,
     FormsModule,
-    MatCardModule, 
+    RouterModule,
     MatButtonModule, 
     MatIconModule, 
     MatTableModule,
@@ -33,29 +33,29 @@ import { ProjectDialogComponent } from '../../../shared/components/project-dialo
     MatChipsModule
   ],
   template: `
-    <div class="projects-container">
-      <div class="header">
-        <h1>Proyectos de Investigación</h1>
-        @if (authService.hasRole('COORDINADOR')) {
-          <button mat-raised-button color="primary" (click)="createProject()">
-            <mat-icon>add</mat-icon>
-            Nuevo Proyecto
-          </button>
-        }
-      </div>
+    <div class="app-page">
+      <div class="app-page__inner">
+        <a routerLink="/dashboard" class="app-back-link">
+          <mat-icon>arrow_back</mat-icon>
+          Volver al dashboard
+        </a>
+        <div class="app-page-header">
+          <h1 class="app-page__title">Proyectos de investigación</h1>
+          @if (authService.hasRole('COORDINADOR')) {
+            <button mat-stroked-button class="auth-btn-pill auth-btn-pill--inline" (click)="createProject()">
+              <span class="auth-btn-pill__label"><mat-icon>add</mat-icon> Nuevo proyecto</span>
+            </button>
+          }
+        </div>
 
-      <!-- Filtros y búsqueda -->
-      <mat-card class="filters-card">
-        <div class="filters-container">
-          <mat-form-field appearance="outline" class="search-field">
-            <mat-label>Buscar por título</mat-label>
-            <input matInput [(ngModel)]="searchText" (ngModelChange)="applyFilters()" placeholder="Escribe para buscar...">
+        <div class="app-toolbar-card">
+          <mat-form-field appearance="outline" class="auth-field" subscriptSizing="dynamic">
+            <input matInput [(ngModel)]="searchText" (ngModelChange)="applyFilters()" placeholder="Buscar por título">
             <mat-icon matPrefix>search</mat-icon>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="filter-field">
-            <mat-label>Filtrar por Estado</mat-label>
-            <mat-select [(ngModel)]="selectedState" (ngModelChange)="applyFilters()">
+          <mat-form-field appearance="outline" class="auth-field" subscriptSizing="dynamic">
+            <mat-select [(ngModel)]="selectedState" (ngModelChange)="applyFilters()" placeholder="Estado" panelClass="auth-select-panel">
               <mat-option [value]="null">Todos</mat-option>
               <mat-option [value]="1">Activo</mat-option>
               <mat-option [value]="2">En desarrollo</mat-option>
@@ -64,9 +64,8 @@ import { ProjectDialogComponent } from '../../../shared/components/project-dialo
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="filter-field">
-            <mat-label>Filtrar por Grupo</mat-label>
-            <mat-select [(ngModel)]="selectedTeam" (ngModelChange)="applyFilters()">
+          <mat-form-field appearance="outline" class="auth-field" subscriptSizing="dynamic">
+            <mat-select [(ngModel)]="selectedTeam" (ngModelChange)="applyFilters()" placeholder="Grupo" panelClass="auth-select-panel">
               <mat-option [value]="null">Todos</mat-option>
               @for (team of uniqueTeams; track team) {
                 <mat-option [value]="team">{{team}}</mat-option>
@@ -74,9 +73,8 @@ import { ProjectDialogComponent } from '../../../shared/components/project-dialo
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="filter-field">
-            <mat-label>Filtrar por Tipo</mat-label>
-            <mat-select [(ngModel)]="selectedProductType" (ngModelChange)="applyFilters()">
+          <mat-form-field appearance="outline" class="auth-field" subscriptSizing="dynamic">
+            <mat-select [(ngModel)]="selectedProductType" (ngModelChange)="applyFilters()" placeholder="Tipo" panelClass="auth-select-panel">
               <mat-option [value]="null">Todos</mat-option>
               @for (type of uniqueProductTypes; track type) {
                 <mat-option [value]="type">{{type}}</mat-option>
@@ -85,16 +83,15 @@ import { ProjectDialogComponent } from '../../../shared/components/project-dialo
           </mat-form-field>
 
           @if (hasActiveFilters()) {
-            <button mat-button (click)="clearFilters()" class="clear-filters-btn">
+            <button mat-button (click)="clearFilters()" class="app-btn-text">
               <mat-icon>clear</mat-icon>
-              Limpiar Filtros
+              Limpiar filtros
             </button>
           }
         </div>
-      </mat-card>
 
       @if (filteredProjects.length > 0) {
-        <mat-card>
+        <div class="app-table-card">
           <table mat-table [dataSource]="filteredProjects">
             <ng-container matColumnDef="title">
               <th mat-header-cell *matHeaderCellDef>Título</th>
@@ -126,7 +123,7 @@ import { ProjectDialogComponent } from '../../../shared/components/project-dialo
               <th mat-header-cell *matHeaderCellDef>Ubicación</th>
               <td mat-cell *matCellDef="let project">
                 @if (project.document) {
-                  <a [href]="project.document" target="_blank" rel="noopener noreferrer" class="document-link">
+                  <a [href]="project.document" target="_blank" rel="noopener noreferrer" class="app-link">
                     <mat-icon>link</mat-icon>
                     Ver documento
                   </a>
@@ -155,62 +152,23 @@ import { ProjectDialogComponent } from '../../../shared/components/project-dialo
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
           </table>
-        </mat-card>
+        </div>
       } @else if (projects.length > 0) {
-        <mat-card>
-          <p class="no-results">No se encontraron proyectos con los filtros aplicados</p>
-        </mat-card>
+        <div class="app-empty-state app-empty-state--compact">
+          <mat-icon>filter_list_off</mat-icon>
+          <p>No se encontraron proyectos con los filtros aplicados</p>
+        </div>
       } @else {
-        <mat-card>
-          <p class="no-projects">No hay proyectos registrados</p>
-        </mat-card>
+        <div class="app-empty-state app-empty-state--compact">
+          <mat-icon>science</mat-icon>
+          <p>No hay proyectos registrados</p>
+        </div>
       }
+      </div>
     </div>
   `,
   styles: [`
-    .projects-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 32px 24px;
-    }
-    
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 32px;
-    }
-    
-    .filters-card {
-      margin-bottom: 24px;
-    }
-    
-    .filters-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: center;
-    }
-    
-    .search-field {
-      flex: 1;
-      min-width: 250px;
-    }
-    
-    .filter-field {
-      min-width: 180px;
-    }
-    
-    .clear-filters-btn {
-      margin-left: auto;
-    }
-    
-    .no-projects, .no-results {
-      text-align: center;
-      padding: 32px;
-      color: #666;
-    }
-    
+    :host { display: block; }
     .no-type {
       color: #999;
       font-style: italic;

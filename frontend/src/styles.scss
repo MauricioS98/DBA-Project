@@ -1,5 +1,6 @@
 /* Angular Material Theme - Required for proper component behavior */
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
+@import 'app/features/auth/auth-form.scss';
 
 /* Paleta de colores - Universidad Distrital */
 :root {
@@ -10,6 +11,19 @@
   --accent-red: #ED3237;
   --accent-green: #00A859;
   --accent-gray: #98999A;
+  /* UI moderna — auth / navegación */
+  --navy-900: #082636;
+  --navy-800: #0c3d5c;
+  --navy-700: #124d73;
+  --surface-page: #eef2f6;
+  --surface-card: #ffffff;
+  --text-heading: #0f2433;
+  --text-body: #3d4f5f;
+  --text-muted: #6b7a8a;
+  --border-field: #c8d2dc;
+  --border-field-focus: #0c3d5c;
+  --shadow-card: 0 16px 48px rgba(8, 38, 54, 0.1), 0 4px 12px rgba(8, 38, 54, 0.06);
+  --font-sans: 'Inter', 'Roboto', system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -20,12 +34,14 @@
 
 html, body {
   height: 100%;
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
   margin: 0;
-  background-color: #f5f5f5;
+  background-color: var(--auth-bg, var(--surface-page));
 }
 
 /* Angular Material Theme Override */

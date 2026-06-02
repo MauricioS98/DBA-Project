@@ -160,25 +160,13 @@ async function seed() {
       SELECT investigation_team_id FROM Investigation_team ORDER BY investigation_team_id LIMIT 3
     `);
     
-    await client.query(`
-      UPDATE Teacher SET team_id = $1 WHERE teacher_id = 1;
-      UPDATE Teacher SET team_id = $2 WHERE teacher_id = 2;
-      UPDATE Teacher SET team_id = $3 WHERE teacher_id = 3;
-    `, [
-      teams.rows[0].investigation_team_id,
-      teams.rows[1].investigation_team_id,
-      teams.rows[2].investigation_team_id
-    ]);
-    
-    await client.query(`
-      UPDATE Student SET team_id = $1 WHERE student_id IN (1, 2, 3);
-      UPDATE Student SET team_id = $2 WHERE student_id IN (4, 5, 6);
-      UPDATE Student SET team_id = $3 WHERE student_id IN (7, 8, 9);
-    `, [
-      teams.rows[0].investigation_team_id,
-      teams.rows[1].investigation_team_id,
-      teams.rows[2].investigation_team_id
-    ]);
+    const teamIds = teams.rows.map((r) => r.investigation_team_id);
+    await client.query('UPDATE Teacher SET team_id = $1 WHERE teacher_id = 1', [teamIds[0]]);
+    await client.query('UPDATE Teacher SET team_id = $1 WHERE teacher_id = 2', [teamIds[1]]);
+    await client.query('UPDATE Teacher SET team_id = $1 WHERE teacher_id = 3', [teamIds[2]]);
+    await client.query('UPDATE Student SET team_id = $1 WHERE student_id IN (1, 2, 3)', [teamIds[0]]);
+    await client.query('UPDATE Student SET team_id = $1 WHERE student_id IN (4, 5, 6)', [teamIds[1]]);
+    await client.query('UPDATE Student SET team_id = $1 WHERE student_id IN (7, 8, 9)', [teamIds[2]]);
     console.log('✅ Teacher y Student actualizados\n');
 
     // 8. Investigation_project (depende de Investigation_team)
@@ -227,7 +215,6 @@ async function seed() {
     
     // Mapear tipos de producto
     const articulo = productTypes.rows[0].product_type_id; // Artículo
-    const libro = productTypes.rows[1].product_type_id; // Libro
     const software = productTypes.rows[2].product_type_id; // Software
     const patente = productTypes.rows[3].product_type_id; // Patente
     const prototipo = productTypes.rows[4].product_type_id; // Prototipo
@@ -236,17 +223,17 @@ async function seed() {
     await client.query(`
       INSERT INTO Product (investigation_project_id, type_product_id, title, document, public_date) VALUES
       ($1, $10, 'Artículo: Reconocimiento Facial con CNN', 'articulo_cnn_2024.pdf', '2024-01-15'),
-      ($1, $12, 'Software: Sistema de Reconocimiento', 'software_reconocimiento_v1.0.zip', '2024-02-20'),
+      ($1, $11, 'Software: Sistema de Reconocimiento', 'software_reconocimiento_v1.0.zip', '2024-02-20'),
       ($2, $10, 'Artículo: Chatbot con NLP', 'articulo_chatbot_nlp.pdf', '2024-03-10'),
-      ($3, $13, 'Patente: Algoritmo Predictivo', 'patente_algoritmo_2024.pdf', '2024-04-05'),
+      ($3, $12, 'Patente: Algoritmo Predictivo', 'patente_algoritmo_2024.pdf', '2024-04-05'),
       ($4, $10, 'Artículo: Optimización de Rutas', 'articulo_rutas_2024.pdf', '2024-01-25'),
-      ($4, $14, 'Prototipo: Sistema de Rutas', 'prototipo_rutas_v1.0.zip', '2024-02-15'),
-      ($5, $12, 'Software: Gestión de Inventarios', 'software_inventarios_v2.0.zip', '2024-03-20'),
-      ($6, $15, 'Informe: Eficiencia Energética', 'informe_energia_2024.pdf', '2024-04-10'),
+      ($4, $13, 'Prototipo: Sistema de Rutas', 'prototipo_rutas_v1.0.zip', '2024-02-15'),
+      ($5, $11, 'Software: Gestión de Inventarios', 'software_inventarios_v2.0.zip', '2024-03-20'),
+      ($6, $14, 'Informe: Eficiencia Energética', 'informe_energia_2024.pdf', '2024-04-10'),
       ($7, $10, 'Artículo: Series Temporales', 'articulo_series_2024.pdf', '2024-01-30'),
-      ($7, $12, 'Software: Análisis de Series', 'software_series_v1.5.zip', '2024-02-25'),
+      ($7, $11, 'Software: Análisis de Series', 'software_series_v1.5.zip', '2024-02-25'),
       ($8, $10, 'Artículo: Big Data con Hadoop', 'articulo_bigdata_2024.pdf', '2024-03-15'),
-      ($9, $12, 'Software: Sistema de Recomendación', 'software_recomendacion_v1.0.zip', '2024-04-20')
+      ($9, $11, 'Software: Sistema de Recomendación', 'software_recomendacion_v1.0.zip', '2024-04-20')
       ON CONFLICT DO NOTHING
     `, [
       projects.rows[0].investigation_project_id,
@@ -258,12 +245,11 @@ async function seed() {
       projects.rows[6].investigation_project_id,
       projects.rows[7].investigation_project_id,
       projects.rows[8].investigation_project_id,
-      articulo,    // $10
-      libro,       // $11 (no usado)
-      software,    // $12
-      patente,     // $13
-      prototipo,   // $14
-      informe      // $15
+      articulo,
+      software,
+      patente,
+      prototipo,
+      informe,
     ]);
     console.log('✅ Product insertado\n');
 

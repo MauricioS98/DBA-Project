@@ -30,30 +30,34 @@ import { TeamDialogComponent } from '../../../shared/components/team-dialog/team
     MatSnackBarModule
   ],
   template: `
-    <div class="my-teams-container">
-      <div class="header">
-        @if (authService.hasRole('ADMINISTRADOR')) {
-          <h1>Grupos de Investigación</h1>
-        } @else {
-          <h1>Mis Grupos de Investigación</h1>
-        }
-        @if (authService.hasRole('ADMINISTRADOR') || authService.hasRole('COORDINADOR')) {
-          <button mat-raised-button color="primary" (click)="createTeam()">
-            <mat-icon>add</mat-icon>
-            Crear Grupo
-          </button>
-        }
-      </div>
+    <div class="app-page">
+      <div class="app-page__inner">
+        <a routerLink="/dashboard" class="app-back-link">
+          <mat-icon>arrow_back</mat-icon>
+          Volver al dashboard
+        </a>
+        <div class="app-page-header">
+          @if (authService.hasRole('ADMINISTRADOR')) {
+            <h1 class="app-page__title">Grupos de investigación</h1>
+          } @else {
+            <h1 class="app-page__title">Mis grupos de investigación</h1>
+          }
+          @if (authService.hasRole('ADMINISTRADOR') || authService.hasRole('COORDINADOR')) {
+            <button mat-stroked-button class="auth-btn-pill auth-btn-pill--inline" (click)="createTeam()">
+              <span class="auth-btn-pill__label"><mat-icon>add</mat-icon> Crear grupo</span>
+            </button>
+          }
+        </div>
 
       @if (teams.length > 0) {
-        <div class="teams-list">
+        <div class="app-grid teams-list">
           @for (team of teams; track team.investigationTeamId) {
-            <mat-card class="team-card">
-              <mat-card-header>
-                <mat-card-title>{{team.name}}</mat-card-title>
-                <mat-card-subtitle>{{team.areaName}}</mat-card-subtitle>
-              </mat-card-header>
-              <mat-card-content>
+            <article class="app-surface-card app-surface-card--static team-card">
+              <header class="app-surface-card__header">
+                <h2 class="app-surface-card__title">{{ team.name }}</h2>
+                <p class="app-surface-card__subtitle">{{ team.areaName }}</p>
+              </header>
+              <div class="app-surface-card__body">
                 <p>{{team.description}}</p>
                 
                 @if (authService.hasRole('ADMINISTRADOR')) {
@@ -67,7 +71,7 @@ import { TeamDialogComponent } from '../../../shared/components/team-dialog/team
                   </div>
                 }
                 
-                <mat-expansion-panel class="applications-panel">
+                <mat-expansion-panel class="app-expansion-panel applications-panel">
                   <mat-expansion-panel-header>
                     <mat-panel-title>
                       <mat-icon>inbox</mat-icon>
@@ -110,7 +114,7 @@ import { TeamDialogComponent } from '../../../shared/components/team-dialog/team
                       <ng-container matColumnDef="state">
                         <th mat-header-cell *matHeaderCellDef>Estado</th>
                         <td mat-cell *matCellDef="let app">
-                          <mat-chip [class]="'state-' + app.state.toLowerCase()">
+                          <mat-chip [class]="'app-chip app-chip--' + app.state.toLowerCase()">
                             {{getStateLabel(app.state)}}
                           </mat-chip>
                         </td>
@@ -162,55 +166,38 @@ import { TeamDialogComponent } from '../../../shared/components/team-dialog/team
                     <p class="no-applications">No hay solicitudes para este equipo</p>
                   }
                 </mat-expansion-panel>
-              </mat-card-content>
-              <mat-card-actions>
-                <button mat-button [routerLink]="['/teams', team.investigationTeamId]">Ver Detalles</button>
-                @if (authService.hasRole('ADMINISTRADOR')) {
-                  <button mat-button (click)="editTeam(team)">Editar</button>
-                } @else {
-                  <button mat-button (click)="editTeam(team)">Editar</button>
-                }
-              </mat-card-actions>
-            </mat-card>
+              </div>
+              <div class="app-surface-card__actions team-card-actions">
+                <button mat-stroked-button class="auth-btn-pill auth-btn-pill--inline" [routerLink]="['/teams', team.investigationTeamId]">
+                  <span class="auth-btn-pill__label"><mat-icon>arrow_forward</mat-icon> Ver detalles</span>
+                </button>
+                <button mat-stroked-button class="auth-btn-pill auth-btn-pill--inline" (click)="editTeam(team)">
+                  <span class="auth-btn-pill__label"><mat-icon>edit</mat-icon> Editar</span>
+                </button>
+              </div>
+            </article>
           }
         </div>
       } @else {
-        <mat-card>
+        <div class="app-empty-state app-empty-state--compact">
+          <mat-icon>groups</mat-icon>
           @if (authService.hasRole('ADMINISTRADOR')) {
-            <p class="no-teams">No hay grupos registrados</p>
+            <p>No hay grupos registrados</p>
           } @else {
-            <p class="no-teams">No tienes grupos registrados</p>
+            <p>No tienes grupos registrados</p>
           }
-        </mat-card>
+        </div>
       }
+      </div>
     </div>
   `,
   styles: [`
-    .my-teams-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 32px 24px;
-    }
-    
-    .header {
+    :host { display: block; }
+    .teams-list { grid-template-columns: 1fr; }
+    .team-card-actions {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 32px;
-    }
-    
-    .teams-list {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-    
-    .team-card {
-      width: 100%;
-    }
-    
-    .applications-panel {
-      margin-top: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     
     .applications-panel mat-panel-title {
@@ -218,123 +205,26 @@ import { TeamDialogComponent } from '../../../shared/components/team-dialog/team
       align-items: center;
       gap: 8px;
     }
-    
     .badge {
-      background-color: #ff9800;
-      color: white;
-      border-radius: 12px;
+      background: #fffbeb;
+      color: #92400e;
+      border-radius: 999px;
       padding: 2px 8px;
-      font-size: 12px;
-      font-weight: bold;
+      font-size: 0.75rem;
+      font-weight: 700;
     }
-    
-    .applications-table {
-      width: 100%;
-      margin-top: 16px;
-    }
-    
-    .state-pendiente {
-      background-color: #ff9800;
-      color: white;
-    }
-    
-    .state-aprobada {
-      background-color: #4caf50;
-      color: white;
-    }
-    
-    .state-rechazada {
-      background-color: #f44336;
-      color: white;
-    }
-    
-    .no-applications {
-      text-align: center;
-      padding: 32px;
-      color: #666;
-    }
-    
-    .no-teams {
-      text-align: center;
-      padding: 32px;
-      color: #666;
-    }
-    
-    .answer-info {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      color: #666;
-      font-size: 0.9rem;
-    }
-    
-    .no-answer {
-      color: #999;
-      font-style: italic;
-      font-size: 0.9rem;
-    }
-    
-    .role-estudiante {
-      background-color: #4caf50 !important;
-      color: white !important;
-    }
-    
-    .role-docente {
-      background-color: #2196f3 !important;
-      color: white !important;
-    }
-    
-    .role-coordinador {
-      background-color: #ff9800 !important;
-      color: white !important;
-    }
-    
-    .role-administrador {
-      background-color: #9c27b0 !important;
-      color: white !important;
-    }
-    
-    ::ng-deep .role-estudiante {
-      background-color: #4caf50 !important;
-      color: white !important;
-    }
-    
-    ::ng-deep .role-docente {
-      background-color: #2196f3 !important;
-      color: white !important;
-    }
-    
-    ::ng-deep .role-coordinador {
-      background-color: #ff9800 !important;
-      color: white !important;
-    }
-    
-    ::ng-deep .role-administrador {
-      background-color: #9c27b0 !important;
-      color: white !important;
-    }
-    
+    .applications-table { width: 100%; margin-top: 12px; }
     .coordinator-info {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-top: 16px;
-      padding: 12px;
-      background-color: #f5f5f5;
-      border-radius: 4px;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
+      color: var(--auth-text-muted);
+      margin-bottom: 12px;
     }
-    
-    .coordinator-info mat-icon {
-      color: var(--primary-blue);
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
-    }
-    
-    .coordinator-info strong {
-      color: var(--primary-black);
-    }
+    .no-applications { text-align: center; padding: 16px; color: var(--auth-text-muted); }
+    .answer-info, .no-answer { font-size: 0.875rem; color: var(--auth-text-muted); }
+    .coordinator-info mat-icon { color: var(--navy-800); }
   `]
 })
 export class MyTeamsComponent implements OnInit {

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
+import { RouterModule } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
@@ -15,7 +15,7 @@ import { ProductTypeDialogComponent } from '../../../shared/components/product-t
   standalone: true,
   imports: [
     CommonModule,
-    MatCardModule,
+    RouterModule,
     MatButtonModule,
     MatIconModule,
     MatTableModule,
@@ -23,17 +23,21 @@ import { ProductTypeDialogComponent } from '../../../shared/components/product-t
     MatSnackBarModule
   ],
   template: `
-    <div class="product-types-container">
-      <div class="header">
-        <h1>Tipos de Proyecto</h1>
-        <button mat-raised-button color="primary" (click)="createProductType()">
-          <mat-icon>add</mat-icon>
-          Nuevo Tipo
-        </button>
-      </div>
+    <div class="app-page">
+      <div class="app-page__inner">
+        <a routerLink="/dashboard" class="app-back-link">
+          <mat-icon>arrow_back</mat-icon>
+          Volver al dashboard
+        </a>
+        <div class="app-page-header">
+          <h1 class="app-page__title">Tipos de producto</h1>
+          <button mat-stroked-button class="auth-btn-pill auth-btn-pill--inline" (click)="createProductType()">
+            <span class="auth-btn-pill__label"><mat-icon>add</mat-icon> Nuevo tipo</span>
+          </button>
+        </div>
 
       @if (productTypes.length > 0) {
-        <mat-card>
+        <div class="app-table-card">
           <table mat-table [dataSource]="productTypes">
             <ng-container matColumnDef="name">
               <th mat-header-cell *matHeaderCellDef>Nombre</th>
@@ -60,43 +64,17 @@ import { ProductTypeDialogComponent } from '../../../shared/components/product-t
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
           </table>
-        </mat-card>
+        </div>
       } @else {
-        <mat-card>
-          <p class="no-types">No hay tipos de proyecto registrados</p>
-        </mat-card>
+        <div class="app-empty-state app-empty-state--compact">
+          <mat-icon>category</mat-icon>
+          <p>No hay tipos de producto registrados</p>
+        </div>
       }
+      </div>
     </div>
   `,
-  styles: [`
-    .product-types-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 32px 24px;
-    }
-    
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 32px;
-    }
-    
-    .no-types {
-      text-align: center;
-      padding: 32px;
-      color: #666;
-    }
-    
-    table {
-      width: 100%;
-    }
-    
-    .mat-column-actions {
-      width: 120px;
-      text-align: center;
-    }
-  `]
+  styles: [`:host { display: block; } .mat-column-actions { width: 120px; text-align: center; }`]
 })
 export class ProductTypesComponent implements OnInit {
   productTypes: any[] = [];

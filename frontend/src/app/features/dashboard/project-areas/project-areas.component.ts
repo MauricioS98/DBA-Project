@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,6 +19,7 @@ import { InvestigationAreaDialogComponent } from '../../../shared/components/inv
   standalone: true,
   imports: [
     CommonModule,
+    RouterModule,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -28,24 +30,28 @@ import { InvestigationAreaDialogComponent } from '../../../shared/components/inv
     MatChipsModule
   ],
   template: `
-    <div class="project-areas-container">
-      <div class="header">
-        <h1>Proyectos Curriculares</h1>
-        <button mat-raised-button color="primary" (click)="createProjectArea()">
-          <mat-icon>add</mat-icon>
-          Nuevo Proyecto Curricular
-        </button>
-      </div>
+    <div class="app-page">
+      <div class="app-page__inner">
+        <a routerLink="/dashboard" class="app-back-link">
+          <mat-icon>arrow_back</mat-icon>
+          Volver al dashboard
+        </a>
+        <div class="app-page-header">
+          <h1 class="app-page__title">Proyectos curriculares</h1>
+          <button mat-stroked-button class="auth-btn-pill auth-btn-pill--inline" (click)="createProjectArea()">
+            <span class="auth-btn-pill__label"><mat-icon>add</mat-icon> Nuevo proyecto</span>
+          </button>
+        </div>
 
       @if (projectAreas.length > 0) {
-        <div class="project-areas-list">
+        <div class="app-grid project-areas-list">
           @for (area of projectAreas; track area.proyectAreaId) {
-            <mat-card class="project-area-card">
-              <mat-card-header class="project-area-header">
+            <article class="app-surface-card app-surface-card--static project-area-card">
+              <header class="app-surface-card__header project-area-header">
                 <div class="header-content">
                   <div>
-                    <mat-card-title>{{area.name}}</mat-card-title>
-                    <mat-card-subtitle>{{area.projectEmail}}</mat-card-subtitle>
+                    <h2 class="app-surface-card__title">{{ area.name }}</h2>
+                    <p class="app-surface-card__subtitle">{{ area.projectEmail }}</p>
                   </div>
                   <div class="card-actions">
                     <button mat-icon-button (click)="editProjectArea(area)" title="Editar">
@@ -58,10 +64,9 @@ import { InvestigationAreaDialogComponent } from '../../../shared/components/inv
                     }
                   </div>
                 </div>
-              </mat-card-header>
-              
-              <mat-card-content>
-                <mat-expansion-panel>
+              </header>
+              <div class="app-surface-card__body">
+                <mat-expansion-panel class="app-expansion-panel">
                   <mat-expansion-panel-header>
                     <mat-panel-title>
                       <span class="panel-title-content">
@@ -75,9 +80,8 @@ import { InvestigationAreaDialogComponent } from '../../../shared/components/inv
                   </mat-expansion-panel-header>
                   
                   <div class="investigation-areas-section">
-                    <button mat-raised-button color="primary" (click)="createInvestigationArea(area)" class="add-button">
-                      <mat-icon>add</mat-icon>
-                      Nueva Área de Investigación
+                    <button mat-stroked-button class="auth-btn-pill auth-btn-pill--inline add-button" (click)="createInvestigationArea(area)">
+                      <span class="auth-btn-pill__label"><mat-icon>add</mat-icon> Nueva área</span>
                     </button>
                     
                     @if (investigationAreas[area.proyectAreaId] && investigationAreas[area.proyectAreaId].length > 0) {
@@ -113,7 +117,7 @@ import { InvestigationAreaDialogComponent } from '../../../shared/components/inv
                   </div>
                 </mat-expansion-panel>
 
-                <mat-expansion-panel>
+                <mat-expansion-panel class="app-expansion-panel">
                   <mat-expansion-panel-header>
                     <mat-panel-title>
                       <span class="panel-title-content">
@@ -186,122 +190,44 @@ import { InvestigationAreaDialogComponent } from '../../../shared/components/inv
                     }
                   </div>
                 </mat-expansion-panel>
-              </mat-card-content>
-            </mat-card>
+              </div>
+            </article>
           }
         </div>
       } @else {
-        <mat-card>
-          <p class="no-areas">No hay proyectos curriculares registrados</p>
-        </mat-card>
+        <div class="app-empty-state app-empty-state--compact">
+          <mat-icon>school</mat-icon>
+          <p>No hay proyectos curriculares registrados</p>
+        </div>
       }
+      </div>
     </div>
   `,
   styles: [`
-    .project-areas-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 32px 24px;
-    }
-    
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 32px;
-    }
-    
-    .no-areas {
-      text-align: center;
-      padding: 32px;
-      color: #666;
-    }
-    
-    table {
-      width: 100%;
-    }
-    
-    .project-areas-list {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-    
-    .project-area-card {
-      width: 100%;
-    }
-    
-    .project-area-header {
-      width: 100%;
-    }
-    
+    :host { display: block; }
+    .project-areas-list { grid-template-columns: 1fr; }
     .header-content {
       display: flex;
       justify-content: space-between;
-      align-items: center;
+      align-items: flex-start;
       width: 100%;
+      gap: 12px;
     }
-    
-    .card-actions {
-      display: flex;
-      gap: 8px;
-    }
-    
-    .panel-title-content {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .panel-title-content mat-icon {
-      font-size: 20px;
-      width: 20px;
-      height: 20px;
-    }
-    
-    mat-expansion-panel {
-      margin-top: 16px;
-    }
-    
-    .investigation-areas-section, .users-section {
-      padding: 16px 0;
-    }
-    
-    .add-button {
-      margin-bottom: 16px;
-    }
-    
-    .investigation-areas-table, .users-table {
-      width: 100%;
-      margin-top: 16px;
-    }
-    
+    .panel-title-content { display: flex; align-items: center; gap: 8px; }
     .badge {
-      background-color: #ff9800;
-      color: white;
-      border-radius: 12px;
+      background: #fffbeb;
+      color: #92400e;
+      border-radius: 999px;
       padding: 2px 8px;
-      font-size: 12px;
-      font-weight: bold;
-      margin-left: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
     }
-    
-    .no-items {
-      text-align: center;
-      padding: 24px;
-      color: #999;
-      font-style: italic;
-    }
-    
-    h4 {
-      margin-top: 24px;
-      margin-bottom: 16px;
-      color: var(--primary-black);
-    }
-    
-    h4:first-child {
-      margin-top: 0;
-    }
+    .add-button { margin-bottom: 12px; }
+    .investigation-areas-table, .users-table { width: 100%; margin-top: 8px; }
+    .no-items { padding: 16px; color: var(--auth-text-muted); }
+    .card-actions { display: flex; gap: 4px; }
+    h4 { margin: 16px 0 8px; font-size: 0.9375rem; font-weight: 700; color: var(--auth-primary); }
+    h4:first-child { margin-top: 0; }
   `]
 })
 export class ProjectAreasComponent implements OnInit {

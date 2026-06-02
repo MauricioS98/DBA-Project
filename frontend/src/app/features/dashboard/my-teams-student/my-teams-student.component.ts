@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -14,31 +13,36 @@ import { ApiService } from '../../../core/services/api.service';
   imports: [
     CommonModule,
     RouterModule,
-    MatCardModule,
     MatButtonModule,
     MatIconModule,
     MatExpansionModule,
     MatChipsModule
   ],
   template: `
-    <div class="my-teams-container">
-      <div class="header">
-        <h1>Mis Grupos de Investigación</h1>
-      </div>
+    <div class="app-page">
+      <div class="app-page__inner">
+        <a routerLink="/dashboard" class="app-back-link">
+          <mat-icon>arrow_back</mat-icon>
+          Volver al dashboard
+        </a>
+        <header class="app-page__header app-page__header--left">
+          <h1 class="app-page__title">Mis grupos de investigación</h1>
+        </header>
 
       @if (loading) {
-        <mat-card>
-          <p class="loading">Cargando grupos...</p>
-        </mat-card>
+        <div class="app-empty-state app-empty-state--compact">
+          <mat-icon>hourglass_empty</mat-icon>
+          <p>Cargando grupos...</p>
+        </div>
       } @else if (teams.length > 0) {
-        <div class="teams-list">
+        <div class="app-grid teams-list">
           @for (team of teams; track team.investigationTeamId) {
-            <mat-card class="team-card">
-              <mat-card-header>
-                <mat-card-title>{{team.name}}</mat-card-title>
-                <mat-card-subtitle>{{team.areaName}}</mat-card-subtitle>
-              </mat-card-header>
-              <mat-card-content>
+            <article class="app-surface-card app-surface-card--static">
+              <header class="app-surface-card__header">
+                <h2 class="app-surface-card__title">{{ team.name }}</h2>
+                <p class="app-surface-card__subtitle">{{ team.areaName }}</p>
+              </header>
+              <div class="app-surface-card__body">
                 <p class="description">{{team.description}}</p>
                 <div class="team-meta">
                   <span><mat-icon>email</mat-icon> {{team.teamEmail}}</span>
@@ -47,7 +51,7 @@ import { ApiService } from '../../../core/services/api.service';
                   }
                 </div>
 
-                <mat-expansion-panel class="projects-panel">
+                <mat-expansion-panel class="app-expansion-panel projects-panel">
                   <mat-expansion-panel-header>
                     <mat-panel-title>
                       <mat-icon>science</mat-icon>
@@ -61,185 +65,55 @@ import { ApiService } from '../../../core/services/api.service';
                   @if (teamProjects[team.investigationTeamId] && teamProjects[team.investigationTeamId].length > 0) {
                     <div class="projects-grid">
                       @for (project of teamProjects[team.investigationTeamId]; track project.investigationProjectId) {
-                        <mat-card class="project-card">
-                          <mat-card-header>
-                            <mat-card-title>{{project.title}}</mat-card-title>
-                            <mat-card-subtitle>
-                              <mat-chip [class]="'state-' + getStateClass(project.state)">
-                                {{getStateLabel(project.state)}}
-                              </mat-chip>
-                            </mat-card-subtitle>
-                          </mat-card-header>
-                          <mat-card-content>
-                            <p>{{project.resume}}</p>
+                        <article class="app-surface-card app-surface-card--static project-card">
+                          <header class="app-surface-card__header">
+                            <h3 class="app-surface-card__title">{{ project.title }}</h3>
+                            <p class="app-surface-card__subtitle">{{ getStateLabel(project.state) }}</p>
+                          </header>
+                          <div class="app-surface-card__body">
+                            <p class="app-surface-card__text">{{ project.resume }}</p>
                             @if (project.document && project.document.trim() !== '') {
-                              <div class="document-link-container">
-                                <a [href]="project.document" target="_blank" rel="noopener noreferrer" class="document-link">
-                                  <mat-icon>link</mat-icon>
-                                  Ver documento/carpeta
-                                </a>
-                              </div>
+                              <a [href]="project.document" target="_blank" rel="noopener noreferrer" class="app-link">
+                                <mat-icon>link</mat-icon>
+                                Ver documento
+                              </a>
                             }
-                          </mat-card-content>
-                        </mat-card>
+                          </div>
+                        </article>
                       }
                     </div>
                   } @else {
                     <p class="no-projects">No hay proyectos registrados para este grupo</p>
                   }
                 </mat-expansion-panel>
-              </mat-card-content>
-              <mat-card-actions>
-                <button mat-button [routerLink]="['/teams', team.investigationTeamId]">
-                  <mat-icon>visibility</mat-icon>
-                  Ver Detalles
+              </div>
+              <div class="app-surface-card__actions">
+                <button mat-stroked-button class="auth-btn-pill auth-btn-pill--inline" [routerLink]="['/teams', team.investigationTeamId]">
+                  <span class="auth-btn-pill__label"><mat-icon>arrow_forward</mat-icon> Ver detalles</span>
                 </button>
-              </mat-card-actions>
-            </mat-card>
+              </div>
+            </article>
           }
         </div>
       } @else {
-        <mat-card>
-          <p class="no-teams">No perteneces a ningún grupo de investigación</p>
-        </mat-card>
+        <div class="app-empty-state app-empty-state--compact">
+          <mat-icon>groups</mat-icon>
+          <p>No perteneces a ningún grupo de investigación</p>
+        </div>
       }
+      </div>
     </div>
   `,
   styles: [`
-    .my-teams-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 32px 24px;
-    }
-    
-    .header {
-      margin-bottom: 32px;
-    }
-    
-    .header h1 {
-      color: var(--primary-black);
-    }
-    
-    .loading, .no-teams {
-      text-align: center;
-      padding: 32px;
-      color: #666;
-    }
-    
-    .teams-list {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-    
-    .team-card {
-      width: 100%;
-    }
-    
-    .description {
-      font-size: 1rem;
-      line-height: 1.6;
-      margin-bottom: 16px;
-      color: #333;
-    }
-    
-    .team-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 16px;
-      color: #666;
-    }
-    
-    .team-meta mat-icon {
-      vertical-align: middle;
-      margin-right: 4px;
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-    }
-    
-    .projects-panel {
-      margin-top: 16px;
-    }
-    
-    .projects-panel mat-panel-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    
-    .count-chip {
-      background-color: var(--primary-blue, #1976d2);
-      color: white;
-      font-size: 12px;
-      height: 24px;
-    }
-    
-    .projects-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 16px;
-      margin-top: 16px;
-    }
-    
-    .project-card {
-      height: 100%;
-    }
-    
-    .no-projects {
-      text-align: center;
-      padding: 24px;
-      color: #999;
-      font-style: italic;
-    }
-    
-    .state-1 {
-      background-color: #4caf50;
-      color: white;
-    }
-    
-    .state-2 {
-      background-color: #ff9800;
-      color: white;
-    }
-    
-    .state-3 {
-      background-color: #2196f3;
-      color: white;
-    }
-    
-    .state-4 {
-      background-color: #f44336;
-      color: white;
-    }
-    
-    .document-link-container {
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid #e0e0e0;
-    }
-    
-    .document-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      color: #2196f3;
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 0.9rem;
-    }
-    
-    .document-link:hover {
-      text-decoration: underline;
-    }
-    
-    .document-link mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-      vertical-align: middle;
-    }
+    :host { display: block; }
+    .teams-list { grid-template-columns: 1fr; }
+    .description { margin-bottom: 12px; color: var(--auth-text-muted); line-height: 1.55; }
+    .team-meta { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; font-size: 0.875rem; color: var(--auth-text-muted); }
+    .team-meta span { display: flex; align-items: center; gap: 6px; }
+    .projects-panel mat-panel-title { display: flex; align-items: center; gap: 8px; }
+    .count-chip { font-size: 0.75rem !important; min-height: 24px !important; }
+    .projects-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 12px; }
+    .no-projects { text-align: center; padding: 16px; color: var(--auth-text-muted); }
   `]
 })
 export class MyTeamsStudentComponent implements OnInit {
